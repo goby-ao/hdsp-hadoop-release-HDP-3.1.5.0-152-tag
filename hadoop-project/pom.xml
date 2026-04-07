@@ -79,7 +79,8 @@
     <protobuf.version>2.5.0</protobuf.version>
     <protoc.path>${env.HADOOP_PROTOC_PATH}</protoc.path>
 
-    <zookeeper.version>3.4.6.3.1.5.0-152</zookeeper.version>
+<!--    <zookeeper.version>3.4.6.3.1.5.0-152</zookeeper.version>-->
+    <zookeeper.version>3.4.6</zookeeper.version>
     <curator.version>2.12.0</curator.version>
     <findbugs.version>3.0.0</findbugs.version>
     <spotbugs.version>3.1.0-RC1</spotbugs.version>
@@ -144,7 +145,8 @@
     <snakeyaml.version>1.16</snakeyaml.version>
     <hbase.one.version>1.2.6</hbase.one.version>
     <hbase.two.version>2.0.0-beta-1</hbase.two.version>
-    <gcs.version>hadoop3-1.9.17.3.1.5.0-152</gcs.version>
+<!--    <gcs.version>hadoop3-1.9.17.3.1.5.0-152</gcs.version>-->
+    <gcs.version>hadoop3-2.0.0</gcs.version>
   </properties>
 
   <dependencyManagement>

@@ -91,6 +91,22 @@ public class DataNodeFaultInjector {
   }
 
   /**
+   * Used as a hook to inject latency when read block
+   * in erasure coding reconstruction process.
+   */
+  public void delayBlockReader() {}
+
+  /**
+   * Used as a hook to inject intercept when free the block reader buffer.
+   */
+  public void interceptFreeBlockReaderBuffer() {}
+
+  /**
+   * Used as a hook to inject intercept When finish reading from block.
+   */
+  public void interceptBlockReader() {}
+
+  /**
    * Used as a hook to inject failure in erasure coding reconstruction
    * process.
    */

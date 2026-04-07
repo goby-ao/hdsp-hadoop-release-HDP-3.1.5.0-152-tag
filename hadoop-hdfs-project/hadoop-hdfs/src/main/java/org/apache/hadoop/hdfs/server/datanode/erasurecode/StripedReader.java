@@ -18,6 +18,7 @@
 package org.apache.hadoop.hdfs.server.datanode.erasurecode;
 
 import com.google.common.base.Preconditions;
+import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
@@ -327,14 +328,14 @@ class StripedReader {
             // cancel remaining reads if we read successfully from minimum
             // number of source DNs required by reconstruction.
             cancelReads(futures.keySet());
-            futures.clear();
+            clearFuturesAndService();
             break;
           }
         }
       } catch (InterruptedException e) {
         LOG.info("Read data interrupted.", e);
         cancelReads(futures.keySet());
-        futures.clear();
+        clearFuturesAndService();
         break;
       }
     }
@@ -428,6 +429,20 @@ class StripedReader {
     }
   }
 
+  // remove all stale futures from readService, and clear futures.
+  private void clearFuturesAndService() {
+    while (!futures.isEmpty()) {
+      try {
+        Future<?> future = readService.poll(
+            stripedReadTimeoutInMills, TimeUnit.MILLISECONDS
+        );
+        futures.remove(future);
+      } catch (InterruptedException e) {
+        LOG.info("Clear stale futures from service is interrupted.", e);
+      }
+    }
+  }
+
   void close() {
     if (zeroStripeBuffers != null) {
       for (ByteBuffer zeroStripeBuffer : zeroStripeBuffers) {
@@ -436,10 +451,13 @@ class StripedReader {
     }
     zeroStripeBuffers = null;
 
+    // 1. 停止 / 关闭 reader（阻断写入源头）
+    // 2. reader 释放自己持有的 buffer 引用
+    // 3. 最后，才允许 buffer 回到 BufferPool
     for (StripedBlockReader reader : readers) {
+      reader.closeBlockReader();
       reconstructor.freeBuffer(reader.getReadBuffer());
       reader.freeReadBuffer();
-      reader.closeBlockReader();
     }
   }
 
