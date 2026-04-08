@@ -2019,6 +2019,11 @@ public class BlockManager implements BlockStatsMXBean {
     return true;
   }
 
+  @VisibleForTesting
+  public BlockPlacementPolicy getStriptedBlockPlacementPolicy() {
+    return placementPolicies.getPolicy(STRIPED);
+  }
+
   private boolean validateReconstructionWork(BlockReconstructionWork rw) {
     BlockInfo block = rw.getBlock();
     int priority = rw.getPriority();
