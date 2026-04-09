@@ -2285,11 +2285,14 @@ public class BlockManager implements BlockStatsMXBean {
           byte blockIndex = ((BlockInfoStriped) block).
               getStorageBlockIndex(storage);
           liveBlockIndices.add(blockIndex);
-          if (!bitSet.get(blockIndex)) {
-            bitSet.set(blockIndex);
-          } else if (state == StoredReplicaState.LIVE) {
-            numReplicas.subtract(StoredReplicaState.LIVE, 1);
-            numReplicas.add(StoredReplicaState.REDUNDANT, 1);
+          // HDFS-14849 只有 LIVE 状态的副本才参与冗余计数和 bitSet 占位
+          if (state == StoredReplicaState.LIVE) {
+            if (!bitSet.get(blockIndex)) {
+              bitSet.set(blockIndex);
+            } else {
+              numReplicas.subtract(StoredReplicaState.LIVE, 1);
+              numReplicas.add(StoredReplicaState.REDUNDANT, 1);
+            }
           }
         }
         continue;
