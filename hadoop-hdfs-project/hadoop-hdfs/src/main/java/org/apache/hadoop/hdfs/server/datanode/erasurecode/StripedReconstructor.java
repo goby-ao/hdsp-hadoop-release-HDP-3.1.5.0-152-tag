@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hdfs.server.datanode.erasurecode;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
@@ -134,6 +135,12 @@ abstract class StripedReconstructor {
     cachingStrategy = CachingStrategy.newDefaultStrategy();
 
     positionInBlock = 0L;
+  }
+
+
+  @VisibleForTesting
+  static ByteBufferPool getBufferPool() {
+    return BUFFER_POOL;
   }
 
   public void incrBytesRead(boolean local, long delta) {
