@@ -826,8 +826,8 @@ public class BlockManager implements BlockStatsMXBean {
     NumberReplicas numReplicas = new NumberReplicas();
     // source node returned is not used
     chooseSourceDatanodes(getStoredBlock(block), containingNodes,
-        containingLiveReplicasNodes, numReplicas, new ArrayList<Byte>(),
-        new ArrayList<Byte>(), LowRedundancyBlocks.LEVEL);
+        containingLiveReplicasNodes, numReplicas,
+        new LinkedList<Byte>(), LowRedundancyBlocks.LEVEL);
     
     // containingLiveReplicasNodes can include READ_ONLY_SHARED replicas which are 
     // not included in the numReplicas.liveReplicas() count
@@ -1933,10 +1933,9 @@ public class BlockManager implements BlockStatsMXBean {
     List<DatanodeStorageInfo> liveReplicaNodes = new ArrayList<>();
     NumberReplicas numReplicas = new NumberReplicas();
     List<Byte> liveBlockIndices = new ArrayList<>();
-    List<Byte> liveBusyBlockIndices = new ArrayList<>();
     final DatanodeDescriptor[] srcNodes = chooseSourceDatanodes(block,
         containingNodes, liveReplicaNodes, numReplicas,
-        liveBlockIndices, liveBusyBlockIndices, priority);
+        liveBlockIndices, priority);
     short requiredRedundancy = getExpectedLiveRedundancyNum(block,
         numReplicas);
     if(srcNodes == null || srcNodes.length == 0) {
@@ -1996,15 +1995,9 @@ public class BlockManager implements BlockStatsMXBean {
       for (int i = 0 ; i < liveBlockIndices.size(); i++) {
         indices[i] = liveBlockIndices.get(i);
       }
-
-      byte[] busyIndices = new byte[liveBusyBlockIndices.size()];
-      for (int i = 0; i < liveBusyBlockIndices.size(); i++) {
-        busyIndices[i] = liveBusyBlockIndices.get(i);
-      }
-
       return new ErasureCodingWork(getBlockPoolId(), block, bc, srcNodes,
           containingNodes, liveReplicaNodes, additionalReplRequired,
-          priority, indices, busyIndices);
+          priority, indices);
     } else {
       return new ReplicationWork(block, bc, srcNodes,
           containingNodes, liveReplicaNodes, additionalReplRequired,
@@ -2229,13 +2222,12 @@ public class BlockManager implements BlockStatsMXBean {
   DatanodeDescriptor[] chooseSourceDatanodes(BlockInfo block,
       List<DatanodeDescriptor> containingNodes,
       List<DatanodeStorageInfo> nodesContainingLiveReplicas,
-      NumberReplicas numReplicas, List<Byte> liveBlockIndices,
-      List<Byte> liveBusyBlockIndices, int priority) {
+      NumberReplicas numReplicas,
+      List<Byte> liveBlockIndices, int priority) {
     containingNodes.clear();
     nodesContainingLiveReplicas.clear();
     List<DatanodeDescriptor> srcNodes = new ArrayList<>();
     liveBlockIndices.clear();
-    liveBusyBlockIndices.clear();
     final boolean isStriped = block.isStriped();
     DatanodeDescriptor decommissionedSrc = null;
 
@@ -2278,31 +2270,20 @@ public class BlockManager implements BlockStatsMXBean {
         continue;
       }
 
-
-      //add by yao
-      byte blockIndex = -1;
-      if (isStriped) {
-        blockIndex = ((BlockInfoStriped) block).getStorageBlockIndex(storage);
-      }
-
       if (priority != LowRedundancyBlocks.QUEUE_HIGHEST_PRIORITY
           && (!node.isDecommissionInProgress() && !node.isEnteringMaintenance())
           && node.getNumberOfBlocksToBeReplicated() >= maxReplicationStreams) {
-        if (isStriped && state == StoredReplicaState.LIVE) {
-          liveBusyBlockIndices.add(blockIndex);
-        }
         continue; // already reached replication limit
       }
       if (node.getNumberOfBlocksToBeReplicated() >= replicationStreamsHardLimit) {
-        if (isStriped && state == StoredReplicaState.LIVE) {
-          liveBusyBlockIndices.add(blockIndex);
-        }
         continue;
       }
 
       if(isStriped || srcNodes.isEmpty()) {
         srcNodes.add(node);
         if (isStriped) {
+          byte blockIndex = ((BlockInfoStriped) block).
+              getStorageBlockIndex(storage);
           liveBlockIndices.add(blockIndex);
           // HDFS-14849 只有 LIVE 状态的副本才参与冗余计数和 bitSet 占位
           if (state == StoredReplicaState.LIVE) {

@@ -629,13 +629,11 @@ public class DatanodeDescriptor extends DatanodeInfo {
     return new BlockIterator(startBlock, getStorageInfos());
   }
 
-  @VisibleForTesting
-  public void incrementPendingReplicationWithoutTargets() {
+  void incrementPendingReplicationWithoutTargets() {
     pendingReplicationWithoutTargets++;
   }
 
-  @VisibleForTesting
-  public void decrementPendingReplicationWithoutTargets() {
+  void decrementPendingReplicationWithoutTargets() {
     pendingReplicationWithoutTargets--;
   }
 
